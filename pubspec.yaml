@@ -35,3 +35,16 @@ flutter:
   uses-material-design: true
   assets:
    - assets/images/logo_green.png
+   - assets/images/jus_alpukat.png
+   - assets/images/jus_strawberry.png
+   - assets/images/jus_kiwi.png
+   - assets/images/jus_pepaya.png
+   - assets/images/jus_jambu.png
+   - assets/images/jus_bluberi.png
+   - assets/images/jus_timun.png
+   - assets/images/jus_mangga.png
+   - assets/images/jus_semangka.png
+   - assets/images/ayam_panggang.png
+   - assets/images/salad_gulung.png
+   - assets/images/salad_sayur.png 
+   - assets/images/infused_timun.png 
