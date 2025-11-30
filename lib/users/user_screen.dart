@@ -289,57 +289,107 @@ class _PetugasScreenState extends State<PetugasScreen> {
   }
 
   // CARD USER
-  Widget buildUserCard(Map<String, String> user) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.22),
-            blurRadius: 7,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // LEFT
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                user["name"]!,
+Widget buildUserCard(Map<String, String> user) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 14),
+    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.22),
+          blurRadius: 7,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // LEFT
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              user["name"]!,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xff5E8E46),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                user["role"]!,
                 style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 6),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 4, horizontal: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xff5E8E46),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  user["role"]!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+            ),
+          ],
+        ),
+
+        // DELETE BUTTON
+        InkWell(
+          onTap: () => _confirmDelete(user),
+          child: const Icon(Icons.delete_outline, size: 28, color: Colors.blueGrey),
+        ),
+      ],
+    ),
+  );
+}
+
+void _confirmDelete(Map<String, String> user) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Hapus Petugas?",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          "Apakah Anda yakin ingin menghapus ${user["name"]}?",
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Batal", style: GoogleFonts.poppins()),
           ),
-          // DELETE ICON
-          const Icon(Icons.delete_outline, size: 28),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Tutup konfirmasi
+
+              // Hapus dari list
+              setState(() {
+                users.remove(user);
+              });
+
+              // Popup sukses (menggunakan popup yang sudah ada)
+              Future.delayed(const Duration(milliseconds: 200), () {
+                showSuccessDialog(
+                  _scaffoldKey.currentContext ?? context,
+                  "Berhasil menghapus ${user["name"]}!",
+                );
+              });
+            },
+            child: Text(
+              "Hapus",
+              style: GoogleFonts.poppins(color: Colors.red),
+            ),
+          ),
         ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 }

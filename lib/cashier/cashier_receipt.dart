@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:greenora_pos/screens/dashboard_screen.dart';
 
-class ReceiptScreen extends StatelessWidget {
+class ReceiptScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cart;
   final String customerName;
   final String cashierName;
@@ -25,6 +25,12 @@ class ReceiptScreen extends StatelessWidget {
     required this.date,
   });
 
+  @override
+  State<ReceiptScreen> createState() => _ReceiptScreenState();
+}
+
+class _ReceiptScreenState extends State<ReceiptScreen> {
+  // UTIL PARSER
   int parsePrice(dynamic price) {
     if (price is int) return price;
     if (price is double) return price.toInt();
@@ -44,10 +50,14 @@ class ReceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int change = cashPaid - total;
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(date);
-    final formatter =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final int change = widget.cashPaid - widget.total;
+    final formattedDate =
+        DateFormat('dd MMM yyyy, HH:mm').format(widget.date);
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -73,7 +83,6 @@ class ReceiptScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // HEADER
                   Center(
                     child: Column(
                       children: [
@@ -97,18 +106,20 @@ class ReceiptScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // INFO TRANSAKSI
-                  buildRow("Kode Transaksi", transactionCode),
+                  // INFORMASI TRANSAKSI
+                  buildRow("Kode Transaksi", widget.transactionCode),
                   buildRow("Tanggal", formattedDate),
-                  buildRow("Pelanggan", customerName),
-                  buildRow("Kasir", cashierName),
+                  buildRow("Pelanggan", widget.customerName),
+                  buildRow("Kasir", widget.cashierName),
+
                   const SizedBox(height: 10),
                   Divider(color: Colors.green.shade300, thickness: 1),
                   const SizedBox(height: 10),
 
-                  // DAFTAR PRODUK
-                  ...cart.map((item) {
-                    final name = item["name"] ?? "Nama Produk Tidak Ditemukan";
+                  // PRODUK
+                  ...widget.cart.map((item) {
+                    final name =
+                        item["name"] ?? "Nama Produk Tidak Ditemukan";
                     final qty = parseQuantity(item["quantity"]);
                     final price = parsePrice(item["price"]);
                     final subtotal = price * qty;
@@ -119,10 +130,15 @@ class ReceiptScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                              child: Text("$name x$qty",
-                                  style: GoogleFonts.poppins(fontSize: 13))),
-                          Text(formatter.format(subtotal),
-                              style: GoogleFonts.poppins(fontSize: 13)),
+                            child: Text(
+                              "$name x$qty",
+                              style: GoogleFonts.poppins(fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            formatter.format(subtotal),
+                            style: GoogleFonts.poppins(fontSize: 13),
+                          ),
                         ],
                       ),
                     );
@@ -133,10 +149,10 @@ class ReceiptScreen extends StatelessWidget {
                   const SizedBox(height: 12),
 
                   // TOTAL & TUNAI
-                  buildRow("Total", formatter.format(total), bold: true),
-                  if (paymentMethod == "Tunai")
-                    buildRow("Tunai", formatter.format(cashPaid)),
-                  if (paymentMethod == "Tunai")
+                  buildRow("Total", formatter.format(widget.total), bold: true),
+                  if (widget.paymentMethod == "Tunai")
+                    buildRow("Tunai", formatter.format(widget.cashPaid)),
+                  if (widget.paymentMethod == "Tunai")
                     buildRow("Kembali", formatter.format(change)),
 
                   const SizedBox(height: 25),
@@ -154,6 +170,7 @@ class ReceiptScreen extends StatelessWidget {
     );
   }
 
+  // BUILD ROW
   Widget buildRow(String left, String right, {bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -161,18 +178,25 @@ class ReceiptScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(left,
-                style: GoogleFonts.poppins(
-                    fontWeight: bold ? FontWeight.w600 : FontWeight.w400)),
-          ),
-          Text(right,
+            child: Text(
+              left,
               style: GoogleFonts.poppins(
-                  fontWeight: bold ? FontWeight.w600 : FontWeight.w400)),
+                fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ),
+          Text(
+            right,
+            style: GoogleFonts.poppins(
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // BUTTON
   Widget fullButton(BuildContext context, String text) {
     return SizedBox(
       width: double.infinity,
@@ -180,8 +204,9 @@ class ReceiptScreen extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
         onPressed: () {
           if (text == "Tutup") {
@@ -193,65 +218,86 @@ class ReceiptScreen extends StatelessWidget {
             _showPrintDialog(context);
           }
         },
-        child: Text(text,
-            style: GoogleFonts.poppins(
-                color: Colors.white, fontWeight: FontWeight.w500)),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
 
+  // PRINT DIALOG
   void _showPrintDialog(BuildContext context) {
-    final int change = cashPaid - total;
-    final formatter =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final int change = widget.cashPaid - widget.total;
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text("Struk Lengkap",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(
+          "Struk Lengkap",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Kode Transaksi : $transactionCode",
+              Text("Kode Transaksi : ${widget.transactionCode}",
                   style: GoogleFonts.poppins()),
-              Text("Tanggal : ${DateFormat('dd MMM yyyy, HH:mm').format(date)}",
+              Text(
+                "Tanggal : ${DateFormat('dd MMM yyyy, HH:mm').format(widget.date)}",
+                style: GoogleFonts.poppins(),
+              ),
+              Text("Pelanggan : ${widget.customerName}",
                   style: GoogleFonts.poppins()),
-              Text("Pelanggan : $customerName", style: GoogleFonts.poppins()),
-              Text("Kasir : $cashierName", style: GoogleFonts.poppins()),
+              Text("Kasir : ${widget.cashierName}",
+                  style: GoogleFonts.poppins()),
               const Divider(),
-              ...cart.map((item) {
-                final name = item["name"] ?? "Nama Produk Tidak Ditemukan";
+
+              ...widget.cart.map((item) {
+                final name = item["name"];
                 final qty = parseQuantity(item["quantity"]);
                 final price = parsePrice(item["price"]);
                 final subtotal = price * qty;
-
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                          child: Text(
-                              "$name - $qty x ${formatter.format(price)}",
-                              style: GoogleFonts.poppins(fontSize: 13))),
-                      Text(formatter.format(subtotal),
-                          style: GoogleFonts.poppins(fontSize: 13)),
+                        child: Text(
+                          "$name x$qty",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
+                      ),
+                      Text(
+                        formatter.format(subtotal),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 );
               }).toList(),
-              const Divider(),
-              Text("Total : ${formatter.format(total)}",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-              if (paymentMethod == "Tunai")
-                Text("Tunai : ${formatter.format(cashPaid)}",
-                    style: GoogleFonts.poppins()),
-              if (paymentMethod == "Tunai")
-                Text("Kembali : ${formatter.format(change)}",
-                    style: GoogleFonts.poppins()),
+
+              const SizedBox(height: 10),
+              Divider(thickness: 1, color: Colors.green.shade300),
+              const SizedBox(height: 10),
+
+              _rowDetail("Total", formatter.format(widget.total)),
+              if (widget.paymentMethod == "Tunai")
+                _rowDetail("Tunai", formatter.format(widget.cashPaid)),
+              if (widget.paymentMethod == "Tunai")
+                _rowDetail("Kembali", formatter.format(change)),
             ],
           ),
         ),
@@ -264,6 +310,26 @@ class ReceiptScreen extends StatelessWidget {
               );
             },
             child: Text("Tutup", style: GoogleFonts.poppins()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ROW DETAIL UNTUK DIALOG
+  Widget _rowDetail(String left, String right) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(left, style: GoogleFonts.poppins(fontSize: 12)),
+          Text(
+            right,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

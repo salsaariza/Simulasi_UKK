@@ -73,15 +73,15 @@ class _LogoutScreenState extends State<LogoutScreen> {
 
                           // Username
                           Text(
-                            "Username",
+                            "Email",
                             style: GoogleFonts.poppins(fontSize: 13),
                           ),
                           const SizedBox(height: 6),
-                          buildInput("salsaadm123"),
+                          buildInput("abirkasir12@gmail.com"),
 
                           const SizedBox(height: 14),
 
-                          buildInput("4354675u vb"),
+                          buildInput("*******"),
                         ],
                       ),
                     ),

@@ -626,7 +626,7 @@ class _DetailCashierScreenState extends State<DetailCashierScreen> {
                                 cart: widget.cart
                                     .map((item) => {
                                           "name":
-                                              item["name"], // HARUS pasti ada
+                                              item["name"],
                                           "price": int.tryParse(item["price"]
                                                   .toString()
                                                   .replaceAll('.', '')) ??
