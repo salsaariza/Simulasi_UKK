@@ -2,92 +2,171 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:greenora_pos/widgets/header.dart';
 import 'package:greenora_pos/widgets/sidebar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 
-class RiwayatCustomerScreen extends StatelessWidget {
+final supabase = Supabase.instance.client;
+
+class RiwayatCustomerScreen extends StatefulWidget {
   final String customerName;
+  final int customerId;
 
   const RiwayatCustomerScreen({
     super.key,
     required this.customerName,
+    required this.customerId,
   });
 
+  @override
+  State<RiwayatCustomerScreen> createState() => _RiwayatCustomerScreenState();
+}
+
+class _RiwayatCustomerScreenState extends State<RiwayatCustomerScreen> {
   final Color primaryGreen = const Color(0xFF4C8A2B);
   final Color lightGreenBg = const Color(0xFFE7F6D3);
+
+  List<Map<String, dynamic>> transactions = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTransactions();
+  }
+
+  Future<void> fetchTransactions() async {
+    setState(() => isLoading = true);
+
+    try {
+      final penjualanData = await supabase
+          .from('penjualan')
+          .select('''
+            id,
+            no_order,
+            updated_at,
+            total_setelah_diskon,
+            penjualan_detail (produk_nama, qty, harga)
+          ''')
+          .eq('pelanggan_id', widget.customerId)
+          .order('updated_at', ascending: false);
+
+      List<Map<String, dynamic>> trxList = [];
+
+      for (var trx in penjualanData) {
+
+        // --- Handle penjualan_detail yang NULL
+        final details = trx['penjualan_detail'] ?? [];
+
+        // --- Format tanggal agar lebih rapi
+        String formattedDate = "-";
+        try {
+          final dateTime = DateTime.parse(trx['updated_at']);
+          formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+        } catch (_) {}
+
+        trxList.add({
+          'id': trx['id'],
+          'invoice': trx['no_order'] ?? 'TRX-${trx['id']}',
+          'date': formattedDate,
+          'items': List<Map<String, String>>.from(
+            details.map((d) => {
+                  'name': d['produk_nama'] ?? '',
+                  'qty': '${d['qty'] ?? 0} x ${d['harga'] ?? 0}',
+                  'price': d['harga']?.toString() ?? '0',
+                }),
+          ),
+          'total': trx['total_setelah_diskon']?.toString() ?? '0',
+        });
+      }
+
+      setState(() {
+        transactions = trxList;
+        isLoading = false;
+      });
+
+    } catch (e) {
+      print('ERROR RIWAYAT: $e');
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: lightGreenBg,
       endDrawer: const SidebarWidget(),
-
       body: SafeArea(
         child: Column(
           children: [
             const DashboardHeader(),
 
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Riwayat Pembelian",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
 
-                    Text(
-                      "$customerName - 2 Transaksi",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                      ),
-                    ),
+                  // --- Jika transaksi kosong
+                  : transactions.isEmpty
+                      ? Center(
+                          child: Text(
+                            "Belum ada transaksi",
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        )
 
-                    const SizedBox(height: 20),
+                      // --- Jika ada transaksi
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Riwayat Pembelian",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                "${widget.customerName} - ${transactions.length} Transaksi",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
 
-                    // ==== CARD 1 ====
-                    _riwayatCard(
-                      invoice: "1245",
-                      date: "07.15 15 Oktober 2025",
-                      items: [
-                        {"name": "Jus Alpukat", "qty": "1 x 15.000", "price": "15.000"},
-                        {"name": "Jus Jambu", "qty": "1 x 10.000", "price": "10.000"},
-                      ],
-                      total: "25.000",
-                    ),
+                              ...transactions.map((trx) => Column(
+                                    children: [
+                                      _riwayatCard(
+                                        invoice: trx['invoice'],
+                                        date: trx['date'],
+                                        items: List<Map<String, String>>.from(
+                                            trx['items']),
+                                        total: trx['total'],
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  )),
 
-                    const SizedBox(height: 16),
-
-                    // ==== CARD 2 ====
-                    _riwayatCard(
-                      invoice: "1219",
-                      date: "11.20 10 Oktober 2025",
-                      items: [
-                        {"name": "Ayam Panggang", "qty": "1 x 20.000", "price": "20.000"},
-                        {"name": "Jus Jambu", "qty": "1 x 10.000", "price": "10.000"},
-                      ],
-                      total: "30.000",
-                    ),
-
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
+                              const SizedBox(height: 40),
+                            ],
+                          ),
+                        ),
             ),
 
-            // BACK 
+            // --- BACK BUTTON (UI sama)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(left: 16, bottom: 20),
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: primaryGreen,
                     borderRadius: BorderRadius.circular(10),
@@ -116,7 +195,7 @@ class RiwayatCustomerScreen extends StatelessWidget {
     );
   }
 
-  // ====== CARD WIDGET ======
+  // --- CARD UI TIDAK DIUBAH ---
   Widget _riwayatCard({
     required String invoice,
     required String date,
@@ -133,25 +212,18 @@ class RiwayatCustomerScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // INVOICE & DATE
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                invoice,
-                style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                date,
-                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700]),
-              ),
+              Text(invoice,
+                  style: GoogleFonts.poppins(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(date,
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: Colors.grey[700])),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // LIST ITEM
           Column(
             children: items.map((item) {
               return Padding(
@@ -178,15 +250,11 @@ class RiwayatCustomerScreen extends StatelessWidget {
               );
             }).toList(),
           ),
-
-          // GARIS PEMBATAS
           Container(
             height: 1,
             color: primaryGreen,
             margin: const EdgeInsets.symmetric(vertical: 6),
           ),
-
-          // TOTAL
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductEdit extends StatefulWidget {
-  final Map<String, dynamic> product; 
+  final Map<String, dynamic> product;
   const ProductEdit({Key? key, required this.product}) : super(key: key);
 
   @override
@@ -21,11 +22,36 @@ class _ProductEditState extends State<ProductEdit> {
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.product["name"]);
-    priceController = TextEditingController(text: widget.product["price"]);
-    stockController = TextEditingController(text: widget.product["stock"].toString());
-    selectedCategory = widget.product["category"];
-    selectedImage = widget.product["image"];
+    nameController = TextEditingController(text: widget.product["nama_produk"]);
+    priceController = TextEditingController(text: widget.product["harga"].toString());
+    stockController = TextEditingController(text: widget.product["stok"].toString());
+    selectedCategory = widget.product["kategori"] ?? "";
+    selectedImage = widget.product["gambar"];
+  }
+
+  Future<void> updateProduct() async {
+    final supabase = Supabase.instance.client;
+
+    final int id = widget.product["id"];
+
+    final String nama = nameController.text.trim();
+    final double harga = double.tryParse(priceController.text) ?? 0.0;
+    final int stok = int.tryParse(stockController.text) ?? 0;
+    final String kategori = selectedCategory;
+    final String gambar = selectedImage ??
+        "https://i.ibb.co/02msh9G/noimage.png";
+
+    await supabase
+        .from('produk')
+        .update({
+          "nama_produk": nama,
+          "harga": harga,
+          "stok": stok,
+          "kategori": kategori,
+          "gambar": gambar,
+          "updated_at": DateTime.now().toIso8601String()
+        })
+        .eq("id", id);
   }
 
   @override
@@ -46,9 +72,8 @@ class _ProductEditState extends State<ProductEdit> {
             ),
             const SizedBox(height: 20),
 
-            // IMAGE PICKER
             GestureDetector(
-              onTap: () {}, // Bisa ditambahkan fungsionalitas pilih gambar
+              onTap: () {},
               child: Container(
                 width: 160,
                 height: 160,
@@ -66,7 +91,7 @@ class _ProductEditState extends State<ProductEdit> {
                       )
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(18),
-                        child: Image.asset(selectedImage!, fit: BoxFit.cover),
+                        child: Image.network(selectedImage!, fit: BoxFit.cover),
                       ),
               ),
             ),
@@ -79,7 +104,6 @@ class _ProductEditState extends State<ProductEdit> {
             _inputField("Stok", stockController),
             const SizedBox(height: 12),
 
-            // DROPDOWN KATEGORI
             Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -92,7 +116,9 @@ class _ProductEditState extends State<ProductEdit> {
                 children: [
                   Expanded(
                     child: Text(
-                      selectedCategory.isEmpty ? "Pilih Kategori" : selectedCategory,
+                      selectedCategory.isEmpty
+                          ? "Pilih Kategori"
+                          : selectedCategory,
                       style: GoogleFonts.poppins(
                         color: selectedCategory.isEmpty ? Colors.grey : Colors.black,
                       ),
@@ -104,20 +130,23 @@ class _ProductEditState extends State<ProductEdit> {
                       DropdownMenuItem(value: "Minuman", child: Text("Minuman")),
                       DropdownMenuItem(value: "Makanan", child: Text("Makanan")),
                     ],
-                    onChanged: (value) => setState(() => selectedCategory = value ?? ""),
+                    onChanged: (value) {
+                      setState(() => selectedCategory = value ?? "");
+                    },
                     underline: const SizedBox(),
                     icon: const Icon(Icons.arrow_drop_down),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 22),
 
             Row(
               children: [
                 Expanded(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(context, false),
                     child: Text(
                       "Batal",
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -127,17 +156,13 @@ class _ProductEditState extends State<ProductEdit> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: primaryGreen),
-                    onPressed: () {
-                      final updatedProduct = {
-                        "name": nameController.text,
-                        "price": priceController.text,
-                        "stock": int.tryParse(stockController.text) ?? 0,
-                        "category": selectedCategory,
-                        "image": selectedImage ?? "assets/images/default.png",
-                      };
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryGreen),
+                    onPressed: () async {
 
-                      // Tampilkan konfirmasi berhasil
+                      await updateProduct();
+
+                      // popup sukses
                       showDialog(
                         context: context,
                         builder: (_) => Dialog(
@@ -150,7 +175,8 @@ class _ProductEditState extends State<ProductEdit> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.check_circle, color: primaryGreen, size: 75),
+                                Icon(Icons.check_circle,
+                                    color: primaryGreen, size: 75),
                                 const SizedBox(height: 10),
                                 Text(
                                   "Produk berhasil diperbarui",
@@ -163,12 +189,13 @@ class _ProductEditState extends State<ProductEdit> {
                                 const SizedBox(height: 18),
                                 ElevatedButton(
                                   onPressed: () {
-                                    Navigator.of(context, rootNavigator: true).pop();
-                                    Navigator.of(context, rootNavigator: true).pop(updatedProduct);
+                                    Navigator.pop(context);  // tutup popup sukses
+                                    Navigator.pop(context, true); // kirim sinyal ke ProductScreen
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryGreen,
-                                    padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 45, vertical: 12),
                                   ),
                                   child: Text(
                                     "OK",
@@ -186,7 +213,8 @@ class _ProductEditState extends State<ProductEdit> {
                     },
                     child: Text(
                       "Simpan",
-                      style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(
+                          color: Colors.white, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -202,10 +230,7 @@ class _ProductEditState extends State<ProductEdit> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
+        Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         const SizedBox(height: 5),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),

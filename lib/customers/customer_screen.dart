@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:greenora_pos/widgets/header.dart';
 import 'package:greenora_pos/widgets/sidebar.dart';
 import 'package:greenora_pos/customers/customer_riwayat.dart';
 import 'package:greenora_pos/customers/customer_editdelete.dart';
+
+final supabase = Supabase.instance.client;
 
 class CustomerScreen extends StatefulWidget {
   const CustomerScreen({super.key});
@@ -16,33 +19,33 @@ class _CustomerScreenState extends State<CustomerScreen> {
   final Color primaryGreen = const Color(0xFF4C8A2B);
   final Color lightGreenBg = const Color(0xFFE7F6D3);
 
-  final List<Map<String, String>> customers = [
-    {
-      "name": "Ajeng Chalista",
-      "address": "Arjowinangun",
-      "phone": "0828 5445 1177",
-      "initial": "A",
-    },
-    {
-      "name": "Azura Selly",
-      "address": "Sambigede",
-      "phone": "0828 5445 1177",
-      "initial": "A",
-    },
-    {
-      "name": "Richo Fer",
-      "address": "Karangkates",
-      "phone": "0828 5445 1177",
-      "initial": "R",
-    },
-  ];
-
+  List<Map<String, dynamic>> customers = [];
   String searchQuery = "";
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCustomers();
+  }
 
   // ============================================================
-  //                POPUP TAMBAH PELANGGAN
+  // FETCH DATA PELANGGAN DARI SUPABASE
   // ============================================================
+  Future<void> fetchCustomers() async {
+    final data = await supabase
+        .from('pelanggan')
+        .select()
+        .order('created_at', ascending: true);
+    setState(() {
+      customers = List<Map<String, dynamic>>.from(data);
+      isLoading = false;
+    });
+  }
 
+  // ============================================================
+  // POPUP TAMBAH PELANGGAN
+  // ============================================================
   void showAddCustomerDialog() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController addressController = TextEditingController();
@@ -162,24 +165,23 @@ class _CustomerScreenState extends State<CustomerScreen> {
 
                       // CONFIRM
                       GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           if (nameController.text.isEmpty ||
                               addressController.text.isEmpty ||
                               phoneController.text.isEmpty) {
                             return;
                           }
 
-                          setState(() {
-                            customers.add({
-                              "name": nameController.text,
-                              "address": addressController.text,
-                              "phone": phoneController.text,
-                              "initial":
-                                  nameController.text[0].toUpperCase(),
-                            });
+                          // INSERT KE SUPABASE
+                          await supabase.from('pelanggan').insert({
+                            'nama': nameController.text,
+                            'alamat': addressController.text,
+                            'no_hp': phoneController.text,
                           });
 
                           Navigator.pop(context);
+
+                          fetchCustomers(); // refresh data
                           showSuccessPopup();
                         },
                         child: Container(
@@ -212,9 +214,8 @@ class _CustomerScreenState extends State<CustomerScreen> {
   }
 
   // ============================================================
-  //                POPUP BERHASIL DITAMBAH
+  // POPUP BERHASIL DITAMBAH
   // ============================================================
-
   void showSuccessPopup() {
     showDialog(
       context: context,
@@ -285,13 +286,12 @@ class _CustomerScreenState extends State<CustomerScreen> {
   }
 
   // ============================================================
-  //                MAIN WIDGET (TIDAK DIUBAH)
+  // MAIN WIDGET
   // ============================================================
-
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String>> filteredCustomers = customers.where((c) {
-      return c["name"]!.toLowerCase().contains(searchQuery.toLowerCase());
+    List<Map<String, dynamic>> filteredCustomers = customers.where((c) {
+      return c["nama"]!.toLowerCase().contains(searchQuery.toLowerCase());
     }).toList();
 
     return Scaffold(
@@ -302,253 +302,257 @@ class _CustomerScreenState extends State<CustomerScreen> {
           children: [
             const DashboardHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Manajemen Pelanggan",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ================= BUTTON TAMBAH =================
-                    GestureDetector(
-                      onTap: showAddCustomerDialog,
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: primaryGreen,
-                            width: 1.4,
-                          ),
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.person_add_alt,
-                                  size: 18, color: primaryGreen),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Tambah Pelanggan",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: primaryGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ================= SEARCH BAR =================
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: primaryGreen,
-                          width: 1.4,
-                        ),
-                      ),
-                      height: 46,
-                      child: Row(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: TextField(
-                              onChanged: (value) {
-                                setState(() {
-                                  searchQuery = value;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                hintText: "Cari Nama",
-                                border: InputBorder.none,
-                                hintStyle: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
+                          Text(
+                            "Manajemen Pelanggan",
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Icon(Icons.search, color: primaryGreen),
-                        ],
-                      ),
-                    ),
+                          const SizedBox(height: 16),
 
-                    const SizedBox(height: 20),
-
-                    // ================= LIST CUSTOMER =================
-                    Column(
-                      children: filteredCustomers.map((c) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: primaryGreen,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // AVATAR
-                              CircleAvatar(
-                                radius: 25,
-                                backgroundColor: Colors.white,
-                                child: Text(
-                                  c["initial"]!,
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: primaryGreen,
-                                  ),
+                          // ================= BUTTON TAMBAH =================
+                          GestureDetector(
+                            onTap: showAddCustomerDialog,
+                            child: Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: primaryGreen,
+                                  width: 1.4,
                                 ),
                               ),
-                              const SizedBox(width: 14),
-
-                              // INFO
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
+                                    Icon(Icons.person_add_alt,
+                                        size: 18, color: primaryGreen),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      c["name"]!,
+                                      "Tambah Pelanggan",
                                       style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.location_on,
-                                            color: Colors.white, size: 15),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          c["address"]!,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.phone,
-                                            color: Colors.white, size: 15),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          c["phone"]!,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-
-                                    // RIWAYAT BUTTON
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                RiwayatCustomerScreen(
-                                                    customerName:
-                                                        c["name"]!),
-                                          ),
-                                        );
-                                      },
-                                      child: Container(
-                                        padding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEFEFEF),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: primaryGreen,
-                                            width: 1.2,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          "Riwayat",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: primaryGreen,
-                                          ),
-                                        ),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: primaryGreen,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-
-                              // ACTION BUTTONS
-                              Column(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      CustomerAction.editCustomer(
-                                        context,
-                                        c["name"]!,
-                                        c["address"]!,
-                                        c["phone"]!,
-                                        (newName, newAddress, newPhone) {
-                                          setState(() {
-                                            c["name"] = newName;
-                                            c["address"] = newAddress;
-                                            c["phone"] = newPhone;
-                                          });
-                                        },
-                                      );
-                                    },
-                                    child: const Icon(Icons.edit,
-                                        color: Colors.white, size: 22),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      bool confirm =
-                                          await CustomerAction.confirmDelete(
-                                              context);
-                                      if (confirm) {
-                                        setState(() {
-                                          customers.remove(c);
-                                        });
-                                      }
-                                    },
-                                    child: const Icon(Icons.delete,
-                                        color: Colors.white, size: 22),
-                                  ),
-                                ],
-                              ),
-                            ],
+                            ),
                           ),
-                        );
-                      }).toList(),
+
+                          const SizedBox(height: 16),
+
+                          // ================= SEARCH BAR =================
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: primaryGreen,
+                                width: 1.4,
+                              ),
+                            ),
+                            height: 46,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        searchQuery = value;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: "Cari Nama",
+                                      border: InputBorder.none,
+                                      hintStyle: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Icon(Icons.search, color: primaryGreen),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // ================= LIST CUSTOMER =================
+                          Column(
+                            children: filteredCustomers.map((c) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: primaryGreen,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // AVATAR
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundColor: Colors.white,
+                                      child: Text(
+                                        c["nama"]![0].toUpperCase(),
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          color: primaryGreen,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+
+                                    // INFO
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            c["nama"]!,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 15,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.location_on,
+                                                  color: Colors.white,
+                                                  size: 15),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                c["alamat"] ?? "",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 13,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.phone,
+                                                  color: Colors.white,
+                                                  size: 15),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                c["no_hp"] ?? "",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 13,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+
+                                          // RIWAYAT BUTTON
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      RiwayatCustomerScreen(
+                                                    customerName: c["nama"]!,
+                                                    customerId: c[
+                                                        "id"], 
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEFEFEF),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                border: Border.all(
+                                                  color: primaryGreen,
+                                                  width: 1.2,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                "Riwayat",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: primaryGreen,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // ACTION BUTTONS
+                                    Column(
+                                      children: [
+                                        // EDIT BUTTON
+                                        GestureDetector(
+                                          onTap: () {
+                                            CustomerAction.editCustomer(
+                                              context,
+                                              c, // kirim seluruh map customer
+                                              () {
+                                                fetchCustomers(); // refresh setelah update
+                                              },
+                                            );
+                                          },
+                                          child: const Icon(Icons.edit,
+                                              color: Colors.white, size: 22),
+                                        ),
+
+                                        const SizedBox(height: 14),
+                                        GestureDetector(
+                                          onTap: () async {
+                                            bool confirm = await CustomerAction
+                                                .confirmDelete(context);
+                                            if (confirm) {
+                                              await supabase
+                                                  .from('pelanggan')
+                                                  .delete()
+                                                  .eq('id', c['id']);
+                                              fetchCustomers();
+                                            }
+                                          },
+                                          child: const Icon(Icons.delete,
+                                              color: Colors.white, size: 22),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
