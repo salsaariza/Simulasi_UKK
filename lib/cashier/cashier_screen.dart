@@ -19,16 +19,16 @@ class _CashierScreenState extends State<CashierScreen> {
   List<Map<String, dynamic>> cart = [];
 
   final List<Map<String, dynamic>> products = [
-    {"name": "Jus Stroberi", "price": "12.000", "stock": 2, "category": "Minuman", "image": "assets/images/jus_strawberry.png"},
+    {"name": "Jus Stroberi", "price": "12.000", "stock": 2, "category": "Minuman", "image": "assets/images/jus_stroberi.png"},
     {"name": "Jus Alpukat", "price": "15.000", "stock": 10, "category": "Minuman", "image": "assets/images/jus_alpukat.png"},
     {"name": "Jus Mangga", "price": "10.000", "stock": 10, "category": "Minuman", "image": "assets/images/jus_mangga.png"},
     {"name": "Jus Kiwi", "price": "15.000", "stock": 8, "category": "Minuman", "image": "assets/images/jus_kiwi.png"},
     {"name": "Jus Bluberi", "price": "15.000", "stock": 5, "category": "Minuman", "image": "assets/images/jus_bluberi.png"},
     {"name": "Jus Semangka", "price": "10.000", "stock": 8, "category": "Minuman", "image": "assets/images/jus_semangka.png"},
-    {"name": "Jus Jambu", "price": "10.000", "stock": 15, "category": "Minuman", "image": "assets/images/jus_jambu.png"},
+    {"name": "Jus Tomat", "price": "10.000", "stock": 15, "category": "Minuman", "image": "assets/images/jus_tomat.png"},
     {"name": "Jus Pepaya", "price": "12.000", "stock": 5, "category": "Minuman", "image": "assets/images/jus_pepaya.png"},
     {"name": "Jus Timun", "price": "10.000", "stock": 8, "category": "Minuman", "image": "assets/images/jus_timun.png"},
-    {"name": "Ayam Panggang", "price": "20.000", "stock": 12, "category": "Makanan", "image": "assets/images/ayam_panggang.png"},
+    {"name": "Ayam Panggang", "price": "20.000", "stock": 12, "category": "Makanan", "image": "assets/images/ayam_panggang-dn.png"},
     {"name": "Salad Sayur", "price": "20.000", "stock": 15, "category": "Makanan", "image": "assets/images/salad_sayur.png"},
     {"name": "Salad Gulung", "price": "20.000", "stock": 15, "category": "Makanan", "image": "assets/images/salad_gulung.png"},
   ];

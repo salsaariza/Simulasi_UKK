@@ -23,15 +23,13 @@ class _ProductDeleteState extends State<ProductDelete> {
   Future<void> deleteProduct(BuildContext context) async {
     try {
       setState(() => isDeleting = true);
-
       final supabase = Supabase.instance.client;
-
       final result = await supabase
           .from('produk')
           .delete()
           .eq('id', widget.productId);
 
-      Navigator.pop(context, true);  // Return TRUE ke ProductScreen
+      Navigator.pop(context, true); 
     } catch (e) {
       setState(() => isDeleting = false);
 

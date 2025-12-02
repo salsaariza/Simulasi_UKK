@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/header.dart';
 import '../widgets/sidebar.dart';
 import 'splash_screen.dart';
@@ -13,12 +14,23 @@ class LogoutScreen extends StatefulWidget {
 
 class _LogoutScreenState extends State<LogoutScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final supabase = Supabase.instance.client;
+
+  String userEmail = "";
+
+  @override
+  void initState() {
+    super.initState();
+    final user = supabase.auth.currentUser;
+    userEmail = user?.email ?? "Tidak ada email";
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const SidebarWidget(),
+      endDrawer: const SidebarWidget(),
       backgroundColor: const Color(0xFFDCEFD6),
       body: SafeArea(
         child: Column(
@@ -71,13 +83,14 @@ class _LogoutScreenState extends State<LogoutScreen> {
 
                           const SizedBox(height: 16),
 
-                          // Username
                           Text(
                             "Email",
                             style: GoogleFonts.poppins(fontSize: 13),
                           ),
                           const SizedBox(height: 6),
-                          buildInput("abirkasir12@gmail.com"),
+
+                          // TAMPILKAN EMAIL USER LOGIN
+                          buildInput(userEmail),
 
                           const SizedBox(height: 14),
 
@@ -129,7 +142,9 @@ class _LogoutScreenState extends State<LogoutScreen> {
                             width: double.infinity,
                             height: 45,
                             child: ElevatedButton.icon(
-                              onPressed: () {
+                              onPressed: () async {
+                                await supabase.auth.signOut();
+
                                 Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(builder: (_) => const SplashScreen()),
@@ -167,7 +182,7 @@ class _LogoutScreenState extends State<LogoutScreen> {
     );
   }
 
-  // ================= INPUT BOX ==================
+  // INPUT BOX
   Widget buildInput(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),

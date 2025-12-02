@@ -44,9 +44,53 @@ class _CustomerScreenState extends State<CustomerScreen> {
   }
 
   // ============================================================
+// VALIDATOR CUSTOMER
+// ============================================================
+
+// Nama harus huruf + spasi
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Nama pelanggan wajib diisi';
+    }
+    if (value.trim().length < 3) {
+      return 'Nama minimal 3 karakter';
+    }
+    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value.trim())) {
+      return 'Nama hanya boleh huruf dan spasi';
+    }
+    return null;
+  }
+
+// Alamat harus huruf + angka + karakter umum alamat
+  String? validateAddress(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Alamat wajib diisi';
+    }
+    // huruf, angka, spasi, koma, titik, strip
+    if (!RegExp(r'^[-a-zA-Z0-9\s.,]+$').hasMatch(value.trim())) {
+      return 'Alamat hanya boleh boleh huruf, angka opsional';
+    }
+    return null;
+  }
+
+  String? validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Nomor HP wajib diisi';
+    }
+    final regex = RegExp(r'^[0-9]+$');
+    if (!regex.hasMatch(value.trim())) {
+      return 'Nomor HP hanya boleh angka';
+    }
+    if (value.trim().length < 11) return 'Nomor HP terlalu pendek';
+    if (value.trim().length > 13) return 'Nomor HP terlalu panjang';
+    return null;
+  }
+
+  // ============================================================
   // POPUP TAMBAH PELANGGAN
   // ============================================================
   void showAddCustomerDialog() {
+    final _formKey = GlobalKey<FormState>();
     final TextEditingController nameController = TextEditingController();
     final TextEditingController addressController = TextEditingController();
     final TextEditingController phoneController = TextEditingController();
@@ -59,152 +103,124 @@ class _CustomerScreenState extends State<CustomerScreen> {
           child: Material(
             color: Colors.transparent,
             child: Container(
-              width: 320,
+              width: 330,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Tambah Pelanggan",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // NAME
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: "Nama Pelanggan",
-                      labelStyle: GoogleFonts.poppins(),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.3),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.5),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Tambah Pelanggan",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 18),
 
-                  // ADDRESS
-                  TextField(
-                    controller: addressController,
-                    decoration: InputDecoration(
-                      labelText: "Alamat",
-                      labelStyle: GoogleFonts.poppins(),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.3),
+                    // Nama
+                    TextFormField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: "Nama Pelanggan",
+                        labelStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.5),
-                      ),
+                      validator: validateName,
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  // PHONE
-                  TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: "No Telp.",
-                      labelStyle: GoogleFonts.poppins(),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.3),
+                    // Alamat
+                    TextFormField(
+                      controller: addressController,
+                      decoration: InputDecoration(
+                        labelText: "Alamat",
+                        labelStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: primaryGreen, width: 1.5),
-                      ),
+                      validator: validateAddress,
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // CANCEL
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 110,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEF8DD),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              "Batal",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w500,
-                                color: primaryGreen,
+                    // Telepon
+                    TextFormField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: "No Telp.",
+                        labelStyle: GoogleFonts.poppins(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: validatePhone,
+                    ),
+                    const SizedBox(height: 20),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                "Batal",
+                                style:
+                                    GoogleFonts.poppins(color: Colors.black87),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4C8A2B),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextButton(
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  await supabase.from('pelanggan').insert({
+                                    'nama': nameController.text.trim(),
+                                    'alamat': addressController.text.trim(),
+                                    'no_hp': phoneController.text.trim(),
+                                  });
 
-                      // CONFIRM
-                      GestureDetector(
-                        onTap: () async {
-                          if (nameController.text.isEmpty ||
-                              addressController.text.isEmpty ||
-                              phoneController.text.isEmpty) {
-                            return;
-                          }
-
-                          // INSERT KE SUPABASE
-                          await supabase.from('pelanggan').insert({
-                            'nama': nameController.text,
-                            'alamat': addressController.text,
-                            'no_hp': phoneController.text,
-                          });
-
-                          Navigator.pop(context);
-
-                          fetchCustomers(); // refresh data
-                          showSuccessPopup();
-                        },
-                        child: Container(
-                          width: 110,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: primaryGreen,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              "Konfirmasi",
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                                  Navigator.pop(context);
+                                  fetchCustomers(); // refresh data
+                                  showSuccessPopup();
+                                }
+                              },
+                              child: Text(
+                                "Simpan",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -475,8 +491,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                                                   builder: (_) =>
                                                       RiwayatCustomerScreen(
                                                     customerName: c["nama"]!,
-                                                    customerId: c[
-                                                        "id"], 
+                                                    customerId: c["id"],
                                                   ),
                                                 ),
                                               );

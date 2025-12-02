@@ -84,7 +84,7 @@ class SidebarWidget extends StatelessWidget {
           _MenuItem(
             icon: Icons.receipt_long,
             title: "Laporan & Cetak",
-            onTap: () => Navigator.pushNamed(context, '/report'),
+            onTap: () => Navigator.pushNamed(context, '/receipt'),
           ),
           _MenuItem(
             icon: Icons.logout,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:greenora_pos/screens/login_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'error_screen.dart';
+import '../services/supabase_client.dart';
+import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,38 +15,43 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity == ConnectivityResult.none) {
+      // Tampilkan ErrorScreen jika tidak ada internet
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (_) => ErrorScreen(
+            errorType: ErrorType.noInternet,
+            message: "Tidak ada koneksi internet!",
+            onRetry: _initApp,
+          ),
+        ),
       );
-    });
+      return;
+    }
+
+    // Inisialisasi Supabase hanya jika internet ada
+    await SupabaseConfig.init();
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE8F5E8),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/logo_green.png',
-              width: 180,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Aplikasi Sistem Penjualan Makanan',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Color.fromARGB(225,78,124,74), 
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
