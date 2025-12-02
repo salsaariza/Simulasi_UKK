@@ -4,13 +4,13 @@ enum ErrorType { noInternet, supabaseError, generalError }
 class ErrorScreen extends StatelessWidget {
   final ErrorType errorType;
   final String message;
-  final VoidCallback? onRetry; // <-- ubah jadi nullable
+  final VoidCallback? onRetry; 
 
   const ErrorScreen({
     super.key,
     required this.errorType,
     required this.message,
-    this.onRetry, // sekarang opsional
+    this.onRetry, 
   });
 
   @override
